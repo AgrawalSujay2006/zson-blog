@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZSON: Teaching Robots to Find Anything — A Blog</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --paper: #f5f1ea;
+    --accent: #c8401a;
+    --accent2: #2a6496;
+    --muted: #6b6560;
+    --rule: #d4cfc8;
+    --highlight: #fef3c7;
+    --card-bg: #ffffff;
+    --code-bg: #1a1917;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 5rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 30px,
+      rgba(255,255,255,0.025) 30px,
+      rgba(255,255,255,0.025) 31px
+    );
+  }
+  .header-inner {
+    max-width: 820px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .kicker {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .kicker::before {
+    content: '';
+    display: inline-block;
+    width: 32px; height: 2px;
+    background: var(--accent);
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 1.4rem;
+    letter-spacing: -0.02em;
+  }
+  h1 em {
+    font-style: italic;
+    color: #c8b89a;
+  }
+  .subtitle {
+    font-size: 1.05rem;
+    color: #a09890;
+    max-width: 580px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #7a7268;
+  }
+  .byline-dot { color: #444; }
+  .tag {
+    display: inline-block;
+    background: rgba(200,64,26,0.15);
+    color: #e8805a;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.2em 0.7em;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── TOC ── */
+  .toc-strip {
+    background: var(--ink);
+    border-top: 1px solid #2a2824;
+    padding: 1rem 2rem;
+  }
+  .toc-inner {
+    max-width: 820px;
+    margin: 0 auto;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .toc-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #555;
+    white-space: nowrap;
+  }
+  .toc-inner a {
+    font-size: 0.8rem;
+    color: #8a8278;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .toc-inner a:hover { color: #e8805a; }
+
+  /* ── ARTICLE ── */
+  article {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3.5rem 2rem 5rem;
+  }
+
+  /* ── SECTIONS ── */
+  section { margin-bottom: 3.5rem; }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--rule);
+    position: relative;
+  }
+  h2::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0;
+    width: 48px; height: 2px;
+    background: var(--accent);
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 1.8rem 0 0.6rem;
+    color: var(--ink);
+  }
+
+  p { margin-bottom: 1rem; color: #2a2520; }
+
+  a { color: var(--accent2); text-decoration: underline; text-underline-offset: 3px; }
+
+  strong { font-weight: 500; }
+
+  /* ── PULL QUOTE ── */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 2rem;
+    border-left: 4px solid var(--accent);
+    background: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-style: italic;
+    line-height: 1.5;
+    color: #3a3028;
+    box-shadow: 4px 4px 0 var(--rule);
+  }
+
+  /* ── CALLOUT BOX ── */
+  .callout {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent2);
+    padding: 1.4rem 1.6rem;
+    margin: 2rem 0;
+    border-radius: 2px;
+  }
+  .callout-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent2);
+    margin-bottom: 0.5rem;
+  }
+  .callout p { margin: 0; font-size: 0.92rem; }
+
+  /* ── RESULTS TABLE ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 2rem 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+  }
+  thead tr {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  thead th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--rule); }
+  tbody tr:nth-child(even) { background: #faf8f4; }
+  tbody tr.highlight-row { background: #fff4ee; }
+  tbody td {
+    padding: 0.65rem 1rem;
+    vertical-align: middle;
+  }
+  .best { color: var(--accent); font-weight: 600; }
+  .zero-shot-badge {
+    display: inline-block;
+    background: #dcfce7;
+    color: #166534;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.15em 0.5em;
+    border-radius: 2px;
+  }
+
+  /* ── PIPELINE DIAGRAM ── */
+  .pipeline {
+    background: var(--ink);
+    border-radius: 4px;
+    padding: 2rem;
+    margin: 2rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    row-gap: 1.5rem;
+  }
+  .pipe-box {
+    background: #1e1c1a;
+    border: 1px solid #3a3630;
+    border-radius: 4px;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    min-width: 120px;
+    position: relative;
+  }
+  .pipe-box .pipe-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #555;
+    margin-bottom: 0.3rem;
+  }
+  .pipe-box .pipe-main {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #e0d8ce;
+  }
+  .pipe-box.accent-box { border-color: var(--accent); }
+  .pipe-box.accent-box .pipe-main { color: #e8805a; }
+  .pipe-box.blue-box { border-color: var(--accent2); }
+  .pipe-box.blue-box .pipe-main { color: #7ab5d8; }
+  .pipe-arrow {
+    color: #3a3630;
+    font-size: 1.2rem;
+    padding: 0 0.5rem;
+    align-self: center;
+  }
+
+  /* ── METRICS GRID ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .metric-card {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1.2rem;
+    text-align: center;
+  }
+  .metric-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .metric-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  /* ── PROS/CONS ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin: 1.5rem 0;
+  }
+  @media (max-width: 580px) { .two-col { grid-template-columns: 1fr; } }
+  .pro-card, .con-card {
+    border-radius: 3px;
+    padding: 1.2rem 1.4rem;
+  }
+  .pro-card { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .con-card { background: #fff7ed; border: 1px solid #fed7aa; }
+  .card-head {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.7rem;
+  }
+  .pro-card .card-head { color: #166534; }
+  .con-card .card-head { color: #9a3412; }
+  .pro-card ul, .con-card ul {
+    list-style: none;
+    font-size: 0.88rem;
+  }
+  .pro-card li::before { content: '✓ '; color: #16a34a; font-weight: 700; }
+  .con-card li::before { content: '✗ '; color: #ea580c; font-weight: 700; }
+  .pro-card li, .con-card li { margin-bottom: 0.4rem; line-height: 1.4; }
+
+  /* ── SUGGESTION CARDS ── */
+  .suggestion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .sug-card {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1.2rem;
+  }
+  .sug-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--rule);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .sug-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+  .sug-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink);
+    color: #555;
+    text-align: center;
+    padding: 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+  }
+  footer a { color: #e8805a; text-decoration: none; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 2rem 0;
+  }
+  .section-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+
+  /* ── INTRO LEAD ── */
+  .lead {
+    font-size: 1.12rem;
+    color: #3a3028;
+    line-height: 1.7;
+    margin-bottom: 1.2rem;
+  }
+
+  /* ── FIGURE CAPTION STYLE ── */
+  .fig-note {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: -1rem;
+    margin-bottom: 2rem;
+    font-style: italic;
+  }
+
+  /* animate on load */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  header, .toc-strip, article { animation: fadeUp 0.6s ease both; }
+  .toc-strip { animation-delay: 0.1s; }
+  article     { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header>
+  <div class="header-inner">
+    <div class="kicker">NeurIPS 2022 &nbsp;·&nbsp; Embodied AI &nbsp;·&nbsp; Zero-Shot Navigation</div>
+    <h1>Teaching Robots to Find <em>Anything</em><br>Without Ever Showing Them a Map</h1>
+    <p class="subtitle">
+      A deep-dive into ZSON — the zero-shot, open-world object-goal navigation system that uses CLIP to bridge the gap between pictures and language, without a single navigation annotation.
+    </p>
+    <div class="byline">
+      <span>Paper: <strong style="color:#c8b89a">Majumdar et al., 2022</strong></span>
+      <span class="byline-dot">·</span>
+      <span class="tag">NeurIPS 2022</span>
+      <span class="byline-dot">·</span>
+      <a href="https://github.com/gunagg/zson" style="color:#7ab5d8;font-size:0.82rem;">GitHub ↗</a>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ TOC ═══════════════════ -->
+<nav class="toc-strip">
+  <div class="toc-inner">
+    <span class="toc-label">Contents</span>
+    <a href="#problem">The Problem</a>
+    <a href="#relevance">Why It Matters</a>
+    <a href="#approach">The Approach</a>
+    <a href="#results">Results</a>
+    <a href="#critical">Critical Analysis</a>
+    <a href="#improvements">Improvements</a>
+    <a href="#takeaway">Takeaway</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════ ARTICLE ═══════════════════ -->
+<article>
+
+  <!-- ── INTRO ── -->
+  <p class="lead">
+    Imagine asking your home robot: "Find the flat-head screwdriver near the bathroom sink." 
+    For a human, this is effortless. For a robot, it requires understanding language, recognizing objects, 
+    and navigating unknown spaces — all without a pre-drawn map. <strong>ZSON</strong> takes a bold step 
+    toward making this possible, without relying on any task-specific training data.
+  </p>
+
+  <hr class="divider">
+
+  <!-- ══ 1. THE PROBLEM ══ -->
+  <section id="problem">
+    <div class="section-number">01</div>
+    <h2>The Problem</h2>
+
+    <p>
+      <strong>Object-Goal Navigation (ObjectNav)</strong> is a well-studied benchmark in Embodied AI. 
+      Given a language prompt like "find a chair," an agent must explore a 3D environment and locate 
+      the target object — without a pre-built map.
+    </p>
+
+    <div class="callout">
+      <div class="callout-label">Formal Task Definition</div>
+      <p>Given a natural language goal <em>o<sup>g</sup></em> (e.g., "sofa") and a starting pose in an unseen 3D environment, 
+      navigate to any instance of that object and call STOP within 1.0 m of the target.</p>
+    </div>
+
+    <p>
+      While progress has been impressive — Habitat challenge success rates climbed from 6% in 2020 to 53% 
+      in 2022 — the research community has operated under a subtle but limiting constraint: the 
+      <strong>closed-world assumption</strong>.
+    </p>
+
+    <p>
+      Existing methods fix a predetermined vocabulary of object categories (e.g., "chair," "bed," "sofa") 
+      and train specialized object detectors for each. If you ask the agent to find a "flat-head screwdriver" 
+      or a "medicine case," it simply cannot. This severely limits real-world applicability.
+    </p>
+
+    <div class="pull-quote">
+      "We started by discussing an open-world scenario where a person may describe any object in language, but ObjectNav is currently formulated over a closed predetermined vocabulary."
+      <br><br><small style="font-style:normal;font-size:0.8rem;color:var(--muted)">— Majumdar et al., 2022</small>
+    </div>
+
+    <p>
+      A second challenge is <strong>data scarcity</strong>. Training ObjectNav agents requires expensive 
+      manual annotation of 3D meshes and, increasingly, large-scale human demonstrations — neither of 
+      which scale well to open-world settings.
+    </p>
+  </section>
+
+  <!-- ══ 2. RELEVANCE ══ -->
+  <section id="relevance">
+    <div class="section-number">02</div>
+    <h2>Why This Problem Matters</h2>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-number">∞</div>
+        <div class="metric-label">Objects a user might ask for in the real world</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-number">~20</div>
+        <div class="metric-label">Object categories in MP3D ObjectNav benchmark</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-number">40k</div>
+        <div class="metric-label">Human demonstrations needed by top supervised methods</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-number">0</div>
+        <div class="metric-label">ObjectNav annotations needed by ZSON</div>
+      </div>
+    </div>
+
+    <p>
+      Real-world deployment of household robots demands open-vocabulary, low-data solutions. Collecting 
+      annotated 3D datasets and human demonstrations is expensive and cannot keep up with the diversity 
+      of real objects. Any progress toward zero-shot, open-world navigation reduces this bottleneck 
+      dramatically.
+    </p>
+
+    <p>
+      Beyond household robotics, ObjectNav research underpins assistive robots for the visually impaired, 
+      warehouse automation, and search-and-rescue systems — all settings where pre-defined vocabularies 
+      are fundamentally impractical.
+    </p>
+  </section>
+
+  <!-- ══ 3. APPROACH ══ -->
+  <section id="approach">
+    <div class="section-number">03</div>
+    <h2>The ZSON Approach</h2>
+
+    <p>
+      ZSON's core insight is elegant: if you can train an agent to navigate toward <em>images</em> 
+      as goals, and if a shared embedding space aligns images and text, then the same agent 
+      can navigate toward <em>language</em> goals — for free. The key ingredient is 
+      <strong>CLIP</strong> (Contrastive Language-Image Pre-training).
+    </p>
+
+    <h3>Step 1: From ImageNav to SemanticNav</h3>
+
+    <div class="pipeline">
+      <div class="pipe-box accent-box">
+        <div class="pipe-title">Goal</div>
+        <div class="pipe-main">📷 Goal Image</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box blue-box">
+        <div class="pipe-title">Encoder</div>
+        <div class="pipe-main">CLIP<sub>v</sub></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box">
+        <div class="pipe-title">Embedding</div>
+        <div class="pipe-main">s<sup>g</sup> ∈ ℝ¹⁰²⁴</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box blue-box">
+        <div class="pipe-title">Policy</div>
+        <div class="pipe-main">ResNet-50 + LSTM</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box accent-box">
+        <div class="pipe-title">Action</div>
+        <div class="pipe-main">Move / Turn / Stop</div>
+      </div>
+    </div>
+
+    <p class="fig-note">Figure: Training pipeline. Image goals are encoded via CLIP's visual encoder into a 1024-dim semantic embedding, which guides a ResNet-50 + LSTM policy trained with DD-PPO reinforcement learning.</p>
+
+    <p>
+      Rather than training an agent to match raw pixel features of a goal image (as prior work did), 
+      ZSON encodes goal images using CLIP's visual encoder first. This produces embeddings that 
+      capture <em>semantic content</em> (e.g., "a sink in a bathroom") rather than low-level appearance 
+      details (exact tile patterns, lighting). The agent is then trained with reinforcement learning 
+      to navigate toward these semantic embeddings.
+    </p>
+
+    <h3>Step 2: Zero-Shot Transfer to ObjectNav</h3>
+
+    <div class="pipeline">
+      <div class="pipe-box accent-box">
+        <div class="pipe-title">Goal (at test time)</div>
+        <div class="pipe-main">📝 "Find a sofa"</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box blue-box">
+        <div class="pipe-title">Text Encoder</div>
+        <div class="pipe-main">CLIP<sub>t</sub></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box">
+        <div class="pipe-title">Embedding</div>
+        <div class="pipe-main">s<sup>g</sup> ∈ ℝ¹⁰²⁴</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box blue-box">
+        <div class="pipe-title">Same Policy</div>
+        <div class="pipe-main">(unchanged)</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-box accent-box">
+        <div class="pipe-title">Navigate!</div>
+        <div class="pipe-main">Zero-shot ✓</div>
+      </div>
+    </div>
+
+    <p class="fig-note">Figure: At test time, text goals are encoded with CLIP's text encoder into the same embedding space. The policy remains unchanged — zero-shot transfer.</p>
+
+    <p>
+      Since CLIP aligns image and text representations in a shared space, text embeddings for 
+      "bathroom sink" land close to visual embeddings for pictures of bathroom sinks. The navigation 
+      policy, never having seen a text goal during training, can generalize to language instructions 
+      at test time — a true zero-shot transfer.
+    </p>
+
+    <h3>Training Data: 36 Million Free Episodes</h3>
+    <p>
+      A critical advantage of this approach is data scalability. ImageNav training data requires no 
+      semantic annotations — episodes are generated by randomly sampling pairs of viewpoints in 3D 
+      environments. ZSON uses 800 HM3D environments, generating 7.2M episodes, then augments by 
+      sampling goal images at four heading angles, yielding <strong>36 million training episodes</strong> 
+      at essentially zero annotation cost.
+    </p>
+
+    <h3>Architecture Choices</h3>
+    <p>
+      The observation encoder is a <strong>ResNet-50</strong> pretrained via DINO self-supervised 
+      learning on the Omnidata Starter Dataset (following the OVRL recipe). At each timestep, 
+      the visual observation and semantic goal embedding are concatenated with the previous action 
+      embedding and fed into a <strong>two-layer LSTM</strong> policy network. Training uses 
+      DD-PPO across 8 NVIDIA A40 GPUs for 500M steps (~1,704 GPU-hours total for both agent configurations).
+    </p>
+
+    <div class="callout">
+      <div class="callout-label">Key Design Insight</div>
+      <p>Unlike prior work (ZER) that first trains ImageNav then learns a separate mapping from language to goal embeddings, ZSON reverses the stages: CLIP provides a semantically-rich embedding space from the start, so language and image goals are aligned by construction.</p>
+    </div>
+
+    <h3>Why ImageNav is the Right Proxy Task</h3>
+    <p>
+      A subtle but important reason ZSON works so well is that <strong>ImageNav is a relatively well-solved RL problem</strong>. The goal is simply a reachable viewpoint in the same environment — a clean geometric target with a dense, well-shaped reward signal. This means the agent reliably learns efficient navigation behaviors early in training, without the RL process getting stuck.
+    </p>
+    <p>
+      Compare this to training ObjectNav directly with RL: the reward is extremely sparse (the agent must stumble upon the correct object in an unseen room), making learning slow, unstable, and data-hungry. ImageNav sidesteps this entirely.
+    </p>
+    <div class="pull-quote">
+      ZSON achieves a clean <em>separation of concerns</em>: CLIP handles <em>what the goal means</em>, while ImageNav's well-behaved RL landscape handles <em>how to navigate there</em> — each problem solved by the tool best suited for it.
+    </div>
+    <p>
+      This is an underappreciated strength of the paper. The success of zero-shot transfer is not just about CLIP's embedding alignment — it is equally about the fact that ImageNav provides a reliable, scalable training signal that produces genuinely capable navigation policies, which then carry over to ObjectNav for free.
+    </p>
+  </section>
+
+  <!-- ══ 4. RESULTS ══ -->
+  <section id="results">
+    <div class="section-number">04</div>
+    <h2>Results &amp; Comparisons</h2>
+
+    <p>
+      ZSON is evaluated on three ObjectNav benchmarks — Gibson, HM3D, and MP3D — and compared 
+      against the only other zero-shot methods at the time of publication.
+    </p>
+
+    <h3>Configuration A: vs. ZER (Gibson)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Zero-Shot?</th>
+            <th>Open-World?</th>
+            <th>ImageNav SR</th>
+            <th>ObjectNav SR</th>
+            <th>ObjectNav SPL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OVRL <em>(supervised)</em></td>
+            <td>✗</td>
+            <td>✗</td>
+            <td>54.2%</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>ZER</td>
+            <td><span class="zero-shot-badge">Yes</span></td>
+            <td>✗</td>
+            <td>29.2%</td>
+            <td>11.3%</td>
+            <td>—</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><strong>ZSON (ours)</strong></td>
+            <td><span class="zero-shot-badge">Yes</span></td>
+            <td>✓</td>
+            <td>36.9%</td>
+            <td><span class="best">31.3%</span></td>
+            <td><span class="best">12.0%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Configuration B: vs. CoW (HM3D &amp; MP3D)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Zero-Shot?</th>
+            <th>HM3D SR</th>
+            <th>HM3D SPL</th>
+            <th>MP3D SR</th>
+            <th>MP3D SPL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OVRL <em>(supervised)</em></td>
+            <td>✗</td>
+            <td>32.8%</td>
+            <td>12.3%</td>
+            <td>25.3%</td>
+            <td>7.0%</td>
+          </tr>
+          <tr>
+            <td>CoW (w/ depth)</td>
+            <td><span class="zero-shot-badge">Yes</span></td>
+            <td>—</td>
+            <td>—</td>
+            <td>11.1%</td>
+            <td>6.3%</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><strong>ZSON (ours)</strong></td>
+            <td><span class="zero-shot-badge">Yes</span></td>
+            <td><span class="best">25.5%</span></td>
+            <td><span class="best">12.6%</span></td>
+            <td><span class="best">15.3%</span></td>
+            <td>4.8%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      The gains are substantial. On Gibson, ZSON improves zero-shot ObjectNav success by 
+      <strong>+20% absolute</strong> over ZER. On MP3D, it improves over CoW by <strong>+4.2% absolute 
+      (37.8% relative)</strong>. Remarkably, ZSON's zero-shot SPL on HM3D matches OVRL — 
+      a supervised method trained on 40,000 human demonstrations.
+    </p>
+
+    <h3>Ablation Highlights</h3>
+    <p>
+      The ablation studies reveal two factors with disproportionate impact on zero-shot transfer:
+    </p>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-number">+10.4%</div>
+        <div class="metric-label">ObjectNav SR gain from OVRL visual encoder pretraining (vs. ResNet-9 from scratch)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-number">+6.6%</div>
+        <div class="metric-label">ObjectNav SR gain from scaling training environments (72 → 800 scenes)</div>
+      </div>
+    </div>
+    <p>
+      Notably, scaling environments <em>slightly hurts</em> ImageNav performance but 
+      <em>significantly helps</em> zero-shot ObjectNav — suggesting that environment diversity 
+      teaches more generalizable spatial priors than task-specific optimization.
+    </p>
+
+    <h3>Open-World Behavior</h3>
+    <p>
+      Qualitative experiments reveal that SemanticNav agents understand compound instructions. 
+      When given "Find a bathroom sink," agents avoid the kitchen; when given "Find a kitchen sink," 
+      they avoid bathrooms. Even implicit room cues work: "Find a sink and a stove" correctly 
+      routes the agent to the kitchen, since the model has internalized that stoves belong in kitchens.
+    </p>
+  </section>
+
+  <!-- ══ 5. CRITICAL ANALYSIS ══ -->
+  <section id="critical">
+    <div class="section-number">05</div>
+    <h2>Critical Analysis</h2>
+
+    <div class="two-col">
+      <div class="pro-card">
+        <div class="card-head">Strengths</div>
+        <ul>
+          <li>Genuinely zero-shot — no ObjectNav labels at all</li>
+          <li>Open-vocabulary: any natural language goal works</li>
+          <li>Scales effortlessly with unannotated 3D scenes</li>
+          <li>Elegant two-stage design; clean and reproducible</li>
+          <li>Compound instructions work without explicit training</li>
+          <li>Strong SPL on HM3D matches supervised OVRL</li>
+        </ul>
+      </div>
+      <div class="con-card">
+        <div class="card-head">Weaknesses</div>
+        <ul>
+          <li>SPL slightly lower than CoW on MP3D (no depth sensor)</li>
+          <li>Biases from training environments may hurt atypical scenes</li>
+          <li>Pure RGB: depth and map cues unavailable</li>
+          <li>Poor exploration remains a key failure mode</li>
+          <li>Visually similar objects cause misidentification (desk vs. table)</li>
+          <li>No explicit memory or mapping module</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Deeper Concerns</h3>
+
+    <p>
+      <strong>The exploration problem is unresolved.</strong> Several qualitative examples show 
+      the agent stopping at visually plausible but incorrect objects (e.g., a table when searching 
+      for a desk), or failing to enter rooms that contain the correct object. A more principled 
+      exploration strategy — perhaps frontier-based or curiosity-driven — could substantially 
+      improve success rates beyond what pure RL training achieves.
+    </p>
+
+    <p>
+      <strong>CLIP's biases become the agent's biases.</strong> CLIP is trained on web-scraped 
+      image-caption pairs which reflect typical Western domestic spaces. If the test environment 
+      has objects in atypical configurations (e.g., a stove in a studio apartment's living area), 
+      the agent's internalized priors may actively mislead it. The paper acknowledges this but 
+      does not quantify how much it hurts performance.
+    </p>
+
+    <p>
+      <strong>Compute requirements are non-trivial.</strong> Training two agent configurations 
+      requires approximately 1,704 GPU-hours on 8 A40 GPUs. While this is reasonable for a 
+      research lab, it is a meaningful barrier for broader reproducibility. The paper does release 
+      code and checkpoints, which partially mitigates this.
+    </p>
+
+    <p>
+      <strong>Evaluation environments may not reflect true open-world conditions.</strong> 
+      While ZSON is evaluated across three datasets (Gibson, HM3D, MP3D), all are indoor 3D 
+      scan benchmarks with similar distribution characteristics. Open-world performance on 
+      outdoor scenes, synthetic environments, or robotic hardware remains untested.
+    </p>
+  </section>
+
+  <!-- ══ 6. IMPROVEMENTS ══ -->
+  <section id="improvements">
+    <div class="section-number">06</div>
+    <h2>Improvement Suggestions</h2>
+
+    <div class="suggestion-grid">
+      <div class="sug-card">
+        <div class="sug-num">01</div>
+        <div class="sug-title">Active Semantic Mapping</div>
+        <div class="sug-desc">Integrate an explicit 2D semantic map (like ANS or SEAL) updated with CLIP-scored object detections. This decouples exploration from goal-matching and should substantially improve SPL.</div>
+      </div>
+      <div class="sug-card">
+        <div class="sug-num">02</div>
+        <div class="sug-title">Depth-Aware Policy</div>
+        <div class="sug-desc">Incorporating depth observations (as CoW does) could improve path efficiency. A lightweight depth-RGB fusion before the policy LSTM could recover SPL without sacrificing zero-shot generality.</div>
+      </div>
+      <div class="sug-card">
+        <div class="sug-num">03</div>
+        <div class="sug-title">Finer-Grained Goal Encoding</div>
+        <div class="sug-desc">Replace CLIP ResNet-50 with CLIP ViT-L/14, which has been shown to have richer spatial features. This may help distinguish visually similar objects like desks and tables.</div>
+      </div>
+      <div class="sug-card">
+        <div class="sug-num">04</div>
+        <div class="sug-title">Curiosity-Driven Exploration</div>
+        <div class="sug-desc">Adding an intrinsic curiosity reward for visiting novel states could reduce the "stopping short" failure mode, where the agent terminates before confirming it has found the goal.</div>
+      </div>
+      <div class="sug-card">
+        <div class="sug-num">05</div>
+        <div class="sug-title">Dialogue Refinement Interface</div>
+        <div class="sug-desc">Since goals are free-form text, a conversational loop where the agent asks clarifying questions ("Which bathroom?") could resolve ambiguity in multi-instance environments.</div>
+      </div>
+      <div class="sug-card">
+        <div class="sug-num">06</div>
+        <div class="sug-title">Real-Robot Evaluation</div>
+        <div class="sug-desc">Sim-to-real transfer experiments on a LoCoBot or Stretch RE1 would validate whether the zero-shot semantic understanding survives the reality gap — a crucial step for practical deployment.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 7. TAKEAWAY ══ -->
+  <section id="takeaway">
+    <div class="section-number">07</div>
+    <h2>The Takeaway</h2>
+
+    <p>
+      ZSON is a genuinely important paper. It demonstrates that the expensive annotation 
+      bottleneck in ObjectNav is not fundamental — it is a product of design choices. By 
+      leveraging CLIP's multimodal embedding space and the procedural scalability of ImageNav, 
+      the authors show that a navigation agent can be taught to understand open-vocabulary 
+      language goals without ever receiving a single ObjectNav reward or demonstration.
+    </p>
+
+    <div class="pull-quote">
+      The key insight is that learning <em>where</em> to navigate and learning <em>what</em> 
+      the goal means can be cleanly separated — and CLIP handles the "what" for free.
+    </div>
+
+    <p>
+      The finetuning results (Appendix B) are particularly exciting: starting from a ZSON 
+      zero-shot checkpoint and finetuning for 100M steps yields <strong>49.6% SR on HM3D</strong> — 
+      a 16.8% absolute improvement over the fully supervised OVRL baseline. This suggests 
+      ZSON is not just a zero-shot trick but a genuinely better initialization for ObjectNav training.
+    </p>
+
+    <p>
+      Remaining challenges — exploration efficiency, sim-to-real transfer, and robustness to 
+      atypical object placements — are clear targets for future work. But as a proof-of-concept 
+      that open-world, zero-shot navigation is achievable at scale, ZSON represents a meaningful 
+      advance for the embodied AI community.
+    </p>
+
+    <div class="callout">
+      <div class="callout-label">Paper &amp; Code</div>
+      <p>
+        <strong>Paper:</strong> Majumdar et al., "ZSON: Zero-Shot Object-Goal Navigation using Multimodal Goal Embeddings," NeurIPS 2022. 
+        <a href="https://arxiv.org/abs/2206.12403">arxiv.org/abs/2206.12403</a><br>
+        <strong>Code:</strong> <a href="https://github.com/gunagg/zson">github.com/gunagg/zson</a>
+      </p>
+    </div>
+  </section>
+
+</article>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+  <p>Blog written for academic assignment · Paper: ZSON (NeurIPS 2022) · 
+  <a href="https://github.com/gunagg/zson">github.com/gunagg/zson</a></p>
+</footer>
+
+</body>
+</html>
